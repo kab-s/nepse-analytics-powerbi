@@ -1,0 +1,32 @@
+# Environments & Virtualenvs
+venv/
+.env
+env/
+ENV/
+
+# Local workspace & internal documentation
+local-only/
+.gemini/
+scratch/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# IDE & Editor configs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS metadata
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs & temp files
+*.log
+*.tmp
