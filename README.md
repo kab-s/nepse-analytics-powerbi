@@ -70,6 +70,27 @@ The dashboard is structured into four focused analytical pages in **Power BI Des
 * **Cross-Strategy Comparison Matrix:** Side-by-side comparison of all 4 quantitative strategies across Total Trades, Winning Trades, Losing Trades, Win Rate %, and Average Price Return % per trade.
 * **Stock Win Rate % vs. Trade Frequency Scatter:** Bubble visual plotting trade frequency (X-axis) against win rate (Y-axis), with bubble size reflecting total wins, referenced against a 50% Win Rate dashed line.
 
+### Data Model (Star Schema)
+The Power BI semantic model connects directly to the SQLite relational schema structured for clean time-intelligence and analytical reporting:
+
+```
+                  ┌─────────────────────────────────┐
+                  │          dim_calendar           │
+                  │ (trade_date, year, month, day)  │
+                  └────────────────┬────────────────┘
+                                   │ 1:N
+ ┌───────────────────────┐  1:N    ▼     1:N ┌────────────────────────┐
+ │      dim_company      ├────► [ OHLCV ] ◄──┤ fact_technical_signals │
+ │ (symbol, company_name)│      [ Facts ]    │ (SMA, RSI, MACD, BB)   │
+ └───────────┬───────────┘      └───────┬─┘  └────────────────────────┘
+             │ 1:N                      │
+             ▼                          ▼ (LTP & Close Price Lookup)
+ ┌───────────────────────┐   ┌──────────────────────────┐
+ │  fact_paper_holdings  │   │   fact_backtest_trades   │
+ │ (WACC, Cost, Val)     │   │ (4 Strategies, Return %) │
+ └───────────────────────┘   └──────────────────────────┘
+```
+
 ---
 
 ## 📊 Quantitative Strategy Benchmark Matrix
@@ -82,6 +103,12 @@ Evaluating trade strategies across **3,727 completed walk-forward trades** in th
 | **Candlestick Price Action** | 697 | 217 | 480 | **31.13%** | 
 | **Wilder's RSI Mean Reversion** | 604 | 178 | 426 | **29.47%** | 
 | **MACD Trend Crossover** | 914 | 247 | 667 | **27.02%** |
+
+### Strategy Logic Overview
+* **Composite Multi-Factor:** Multi-indicator confluence requiring Trend (`Close > SMA 50`), Momentum (`MACD Histogram > 0`), and Value confirmation (`RSI < 40`).
+* **Candlestick Price Action:** Enters on high-conviction bullish reversal geometries (`Bullish Engulfing`, `Bullish Hammer`) and exits on bearish patterns (`Bearish Engulfing`, `Shooting Star`).
+* **Wilder's RSI Mean Reversion:** Buys oversold pullbacks (`RSI < 40`) trading above the 20-day trend (`Close > SMA 20`); exits on overbought signals (`RSI > 72`).
+* **MACD Trend Crossover:** Captures directional momentum when the MACD histogram crosses above zero with price trading above the 50-day moving average (`Close > SMA 50`).
 
 ---
 
@@ -101,13 +128,13 @@ The ingestion script automatically looks up the official closing price on the pu
 
 ---
 
-## 🔄 Automated ETL Pipeline & Data Architecture
+## 🔄 ETL Pipeline
 
-The repository demonstrates a complete, automated **Extract, Transform, Load (ETL)** pipeline that turns messy market exports into optimized relational tables and analytical views:
+The **Extract, Transform, Load (ETL)** pipeline turns NEPSE CSV exports into optimized relational tables and analytical views:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                   AUTOMATED ETL FLOW                                   │
+│                                   ETL FLOW                                             │
 └────────────────────────────────────────────────────────────────────────────────────────┘
   [ EXTRACT ]    Raw Daily & Historical CSVs (NEPSE exports, unquoted commas, paper trades)
                          │
@@ -118,28 +145,31 @@ The repository demonstrates a complete, automated **Extract, Transform, Load (ET
                  • Vectorized Signal Engine (SMA 20/50, Bollinger Bands, RSI 14, MACD)
                  • Mathematical Candlestick pattern detection (Engulfing, Hammer, Star)
                  • Multi-strategy walk-forward backtesting (3,727 simulated trades)
-                 • CDSC WACC accounting with official May 2024 SEBON fee slabs
                          │
                          ▼
-  [ LOAD ]       • Automated DDL execution (`sql/01_schema_ddl.sql`) into SQLite
+  [ LOAD ]       • DDL execution (`sql/01_schema_ddl.sql`) into SQLite
                  • Idempotent upserts (`ON CONFLICT DO UPDATE`) across Fact & Dim tables
-                 • Automated compilation of Power BI views (`sql/02_views_powerbi.sql`)
+                 • Compilation of Power BI views (`sql/02_views_powerbi.sql`)
 ```
 
-### 1. Extract
-* **Heterogeneous Ingestion:** Dynamically scans `data/` to ingest both bulk historical dumps (`2026.csv`) and official daily exports (`Today's Price - *.csv`).
-* **Paper Ledger Ingestion:** Reads user BUY orders directly from `data/paper_trades.csv`.
+---
 
-### 2. Transform
-* **Robust Text Repair:** Implements a fallback parser that reconstructs records where company names contain unquoted commas (a frequent defect in raw NEPSE exports).
-* **Dimensional Modeling:** Normalizes raw records into a clean relational schema, generating a calendar dimension (`dim_calendar`) to enable time-intelligence calculations in DAX.
-* **Vectorized Financial Analytics:** Uses pandas and NumPy to compute rolling indicators, exponential smoothing (Wilder's RSI, MACD), and price-action candle geometry across all securities.
-* **CDSC WACC Accounting:** Computes fee-inclusive acquisition costs using May 2024 SEBON tiered broker commission slabs and marks open positions to market against live closing prices (LTP).
+## 🐍 Python Engineering & Execution Architecture
 
-### 3. Load
-* **Automated SQLite DDL:** Running the scripts automatically executes `sql/01_schema_ddl.sql` to initialize all 7 tables and query indexes with zero manual database administration.
-* **Idempotent Ingestion:** Employs composite primary key constraints (`trade_date`, `symbol`) and `ON CONFLICT DO UPDATE` clauses to guarantee safe, repeatable re-runs.
-* **Analytical View Compilation:** Automatically executes `sql/02_views_powerbi.sql` upon ingestion completion, ensuring Power BI feeds are always synchronized and query-ready.
+Rather than relying on heavyweight or fragile third-party frameworks, the quant engine is engineered strictly using **Python standard libraries, NumPy, and Pandas** for high execution speed, resilience, and maintainability:
+
+* **Vectorized Financial Analytics:** Uses NumPy arrays and Pandas rolling windows/exponential smoothing (`.rolling()`, `.ewm()`) to compute 7 technical indicators and candlestick geometries across 60,000+ price bars in ~10 seconds—avoiding slow Python `for` loops.
+* **Defensive Ingestion & Text Repair:** Implements a custom line-by-line fallback parser in `01_ingest_to_sql.py` that reconstructs records where company names contain unquoted commas (a frequent defect in raw NEPSE CSV exports).
+* **Leakage-Free Walk-Forward Simulator:** Enforces strict $T+1$ execution in `03_simple_backtester.py` by shifting signal arrays forward by one bar, guaranteeing zero lookahead bias during trade entry and exit.
+* **Zero Dependency Bloat:** Requires only `pandas`, `numpy`, and `python-dateutil`. The database layer relies entirely on Python's built-in `sqlite3` driver, making setup fast and lightweight across all operating systems.
+
+### Modular Script Breakdown
+
+| Module | Runtime | Core Responsibilities | Key Python Techniques |
+|---|:---:|---|---|
+| **`01_ingest_to_sql.py`** | ~8s | CSV scanning, schema mapping, calendar generation, automated DDL | Regex stream parsing, `sqlite3.executescript()`, atomic transactions |
+| **`02_signal_engine.py`** | ~10s | Rolling SMA/Bollinger Bands, Wilder's RSI, MACD, Candlestick logic | Vectorized `.rolling()` & `.ewm()`, `np.select()` boolean mask conditions |
+| **`03_simple_backtester.py`** | ~8s | Walk-forward multi-strategy backtesting, CDSC WACC portfolio ledger | Forward-shift execution ($T+1$), group aggregations, MTM valuation |
 
 ---
 
