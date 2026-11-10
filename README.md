@@ -1,290 +1,256 @@
-# NEPSE Analytics & Quantitative Trading Dashboard
+# NEPSE Analytics & Quantitative Trading Terminal
 
-### Institutional-Grade Technical Screening, Multi-Strategy Walk-Forward Backtesting, and Power BI Financial Intelligence for the Nepal Stock Exchange (NEPSE)
+> **An end-to-end financial data pipeline, multi-strategy walk-forward backtester, and interactive 4-page Power BI dashboard for the Nepal Stock Exchange (NEPSE)—modeled with realistic May 2024 SEBON transaction fees, CDSC WACC accounting, and custom Vega-Lite candlestick charting.**
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
-[![Power BI](https://img.shields.io/badge/Power_BI-Desktop-F2C811.svg?logo=powerbi&logoColor=black)](https://powerbi.microsoft.com/)
-[![Deneb Vega-Lite](https://img.shields.io/badge/Custom_Visual-Deneb_Vega--Lite_v5-FF4B4B.svg)](https://deneb-viz.github.io/)
-[![SQLite 3](https://img.shields.io/badge/Database-SQLite_3-003B57.svg?logo=sqlite&logoColor=white)](https://www.sqlite.org/)
-[![Regulatory Standard](https://img.shields.io/badge/Regulations-May_2024_SEBON_Slabs-10B981.svg)](#5-real-world-market-friction--nepal-regulatory-modeling)
-[![Verified Pipeline](https://img.shields.io/badge/Pipeline_Integrity-100%25_Idempotent-blue.svg)](#6-reproduction--execution-guide)
-
-An end-to-end quantitative analytics engine and interactive 4-page Power BI executive terminal analyzing **60,178 daily OHLCV trading facts** across **476 listed Nepalese securities**. 
-
-The system implements a production ETL data pipeline in Python and SQLite, computes vectorized technical indicators and candlestick geometries, conducts realistic walk-forward backtests across **4 quantitative strategies (3,727 completed trades)** under official **May 2024 SEBON tiered broker commissions**, and exposes high-density financial visualizations through **Power BI Desktop**, custom **Deneb (Vega-Lite)** candlestick charts, and an automated **CDSC WACC paper trading ledger**.
+[![Power BI](https://img.shields.io/badge/Power_BI-Desktop-F2C811?style=for-the-badge&logo=powerbi&logoColor=black)](NEPSE_Analytics.pbix)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-Database-003B57?style=for-the-badge&logo=sqlite&logoColor=white)](nepse.db)
+[![Deneb](https://img.shields.io/badge/Deneb-Vega--Lite%20v5-FF4B4B?style=for-the-badge)](powerbi/deneb_candlestick_spec.json)
+[![Showcase PDF](https://img.shields.io/badge/Showcase_Deck-PDF-E11D48?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)](NEPSE_Analytics.pdf)
 
 ---
 
-## 📌 Quick Links
+## 📑 Quick Navigation
 
-- 📑 **[Executive PDF Showcase (`NEPSE_Analytics.pdf`)](NEPSE_Analytics.pdf)** — High-resolution 4-page visual presentation deck of the complete dashboard.
-- 📊 **[Power BI Desktop Model (`NEPSE_Analytics.pbix`)](NEPSE_Analytics.pbix)** — Fully configured report with custom DAX measures, star schema, and Deneb visuals.
-- 🕯️ **[Deneb Candlestick Specification (`powerbi/deneb_candlestick_spec.json`)](powerbi/deneb_candlestick_spec.json)** — Production Vega-Lite v5 declarative financial chart specification.
-- 🗄️ **[Relational SQL Schema & Views (`sql/`)](sql/)** — DDL schemas and optimized analytical views (`vw_market_overview_latest`, `vw_deneb_candlestick`, `vw_backtest_performance`, `vw_paper_portfolio_holdings`).
-
----
-
-## 🏆 Executive Scorecard & Audited Results
-
-| Dimension / Metric | Audited Result | Production Implementation Detail |
-|---|:---:|---|
-| **Market Data Universe** | **60,178 Daily Facts** | Official NEPSE daily transactions across 476 listed equities, debentures, and mutual funds (2026-01-01 to 2026-11-06) |
-| **Pipeline Architecture** | **3-Tier Idempotent Stack** | Automated Python ETL $\rightarrow$ SQLite Relational Schema $\rightarrow$ Vectorized Signal Engine $\rightarrow$ Power BI DAX |
-| **Analytical Indicator Set** | **7 Vectorized Indicators** | SMA 20, SMA 50, Bollinger Bands (20, 2.0), MACD (12, 26, 9), Wilder's RSI (14), Candlestick Pattern Geometries |
-| **Quantitative Strategies** | **4 Walk-Forward Rule Sets** | Composite Multi-Factor, MACD Trend Crossover, Wilder's RSI Mean Reversion, Candlestick Price Action |
-| **Backtest Trade Universe** | **3,727 Completed Trades** | Walk-forward simulation across 402 eligible stocks; zero lookahead bias; strict T+1 execution |
-| **Market Friction Modeling** | **May 2024 SEBON Rules** | 5-tier broker commission schedule (0.27%–0.40%), 0.015% SEBON fee, NPR 25 CDSC DP charge (sell only), 7.5% CGT |
-| **Paper Portfolio Engine** | **Live Mark-to-Market** | Automated BUY CSV ingestion, CDSC WACC cost basis accounting, and live unrealized P&L against latest LTP |
-| **Data Visualization Tier** | **4-Page Interactive Suite** | Executive Overview, Deneb Vega-Lite Terminal, Interactive Strategy Lab, Strategy Screener & Benchmark Matrix |
+- 📄 **[Executive 4-Page PDF Showcase (`NEPSE_Analytics.pdf`)](NEPSE_Analytics.pdf)** — Full visual walkthrough of the complete dashboard.
+- 📊 **[Power BI Report File (`NEPSE_Analytics.pbix`)](NEPSE_Analytics.pbix)** — Interactive data model with custom DAX measures and Deneb visual.
+- 🕯️ **[Deneb Candlestick Specification (`powerbi/deneb_candlestick_spec.json`)](powerbi/deneb_candlestick_spec.json)** — Production Vega-Lite JSON code for the financial terminal chart.
+- 🗄️ **[Database Schemas & Views (`sql/`)](sql/)** — Relational DDL definitions and optimized analytical views.
+- 💻 **[ETL & Quant Source Code (`src/`)](src/)** — Modular ingestion, vectorized technical signal engine, and backtester.
 
 ---
 
-## 1. Problem Statement: Retail Intuition vs. Quantitative Ground Truth
+## 💡 Why I Built This
 
-In emerging equity markets like the Nepal Stock Exchange (NEPSE), retail market participants frequently suffer compounding portfolio drawdowns due to three systemic pitfalls:
+Having worked across banking operations, treasury, and MIS reporting in Nepal, I have consistently seen how retail equity investors and small funds make decisions based on unverified social media tips, gut feeling, or simple lagging chart patterns. 
 
-1. **Heuristic & Rumor-Driven Trading:** Relying on unverified social media sentiment or lagging chart patterns without empirical win-rate or expectancy data.
-2. **Failure to Account for Transaction Friction:** Underestimating the drag of broker commissions, SEBON regulatory fees, CDSC depository fees, and Capital Gains Tax (CGT), which can turn a superficially profitable price return into a net negative trade.
-3. **Absence of Unified Portfolio Telemetry:** Disconnected tracking between theoretical technical setups, backtested strategy expectancy, and active cash portfolio holdings.
+More importantly, most retail participants completely ignore the silent killer of portfolio compounding: **transaction friction**. In Nepal's market, trading costs add up quickly across tiered broker commissions, SEBON regulatory charges, CDSC depository fees, and Capital Gains Tax (CGT). A strategy that looks profitable on paper often ends up deeply in the red once real-world friction is applied.
 
-### The Solution: A Complete Quantitative Analytics Ecosystem
-This project replaces subjective guesswork with an audited, quantitative decision-support system:
-* **Separation of Concerns:** Uncouples **pure price-action statistical validity** (unlevered price return) from **cash portfolio execution** (friction, taxes, WACC, and fee drag).
-* **Automated Data Engineering:** Ingests raw NEPSE daily CSV exports, repairs malformed strings and unquoted company commas, and synchronizes a normalized SQLite database.
-* **Institutional-Grade Visual Intelligence:** Delivers an interactive 4-page Power BI dashboard featuring custom declarative Vega-Lite candlestick charts, dynamic single-stock equity curves, and head-to-head strategy leaderboards.
+I built this project to answer two practical questions:
+1. **What does market-wide technical data actually look like when organized into an institutional-grade relational data warehouse and interactive BI terminal?**
+2. **How do popular trading strategies (MACD, RSI, Candlestick Patterns, and Multi-Factor systems) actually perform across hundreds of Nepalese stocks once you deduct every single rupee of regulatory and broker fees?**
 
 ---
 
-## 2. End-to-End System Architecture
+## 🖥️ The 4-Page Power BI Dashboard
 
-The pipeline processes raw market data into clean analytical feeds through three modular, decoupled stages:
+The presentation layer is built in **Power BI Desktop**, connecting directly to analytical SQL views compiled in **SQLite**. Each page serves a distinct analytical purpose:
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                  NEPSE ANALYTICS PIPELINE                                    │
-└──────────────────────────────────────────────────────────────────────────────────────────────┘
-                                                │
-   1. INGESTION & DATA NORMALIZATION            ▼
-   ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-   │ Module 01: `src/01_ingest_to_sql.py`                                                     │
-   │ • Fast bulk ingestion + comma-separated security name repair                             │
-   │ • Strict numeric cleaning, schema enforcement, and primary key deduplication             │
-   │ • Synchronizes `dim_company`, `dim_calendar`, and `fact_daily_ohlcv`                     │
-   │ • Automatically compiles production views from `sql/02_views_powerbi.sql`                │
-   └──────────────────────────────────────────────────────────────────────────────────────────┘
-                                                │
-   2. VECTORIZED SIGNAL & INDICATOR ENGINE      ▼
-   ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-   │ Module 02: `src/02_signal_engine.py`                                                     │
-   │ • Computes SMA 20, SMA 50, Bollinger Bands (20, 2.0), MACD (12, 26, 9)                   │
-   │ • 14-Day Wilder's Exponential Smoothing RSI with cold-start warmup safety                │
-   │ • Mathematical Candlestick Geometries: Bullish/Bearish Engulfing, Hammer, Shooting Star │
-   │ • Generates discrete BUY, SELL, HOLD decisions into `fact_technical_signals`             │
-   └──────────────────────────────────────────────────────────────────────────────────────────┘
-                                                │
-   3. MULTI-STRATEGY BACKTEST & PAPER LEDGER    ▼
-   ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-   │ Module 03: `src/03_simple_backtester.py`                                                 │
-   │ • Walk-forward simulation of 4 modular trading strategies across 402 stocks              │
-   │ • Real-world transaction friction: May 2024 SEBON broker slabs, DP fees, 7.5% CGT        │
-   │ • Dual-book paper trading ledger: CDSC WACC cost basis & live LTP mark-to-market         │
-   │ • Populates `fact_backtest_trades` and `fact_paper_holdings`                             │
-   └──────────────────────────────────────────────────────────────────────────────────────────┘
-                                                │
-   4. POWER BI PRESENTATION TIER                ▼
-   ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-   │ Power BI Desktop (`NEPSE_Analytics.pbix`) & Deneb Vega-Lite Specification                │
-   │ • Page 1: Market Overview & Daily Movers (Breadth, Turnover, Top Movers, Signals)        │
-   │ • Page 2: Technical Terminal & Deneb Candlesticks (Bollinger Bands, RSI, MACD)           │
-   │ • Page 3: Strategy Lab & Paper Trading Portfolio (Dynamic Equity Curves, Live Holdings)  │
-   │ • Page 4: Strategy Screener & Benchmark Matrix (Top 10 Outperformers, Cross-Filter)      │
-   └──────────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                             POWER BI DASHBOARD SUITE                             │
+├─────────────────────┬──────────────────────┬────────────────────┬────────────────┤
+│       PAGE 1        │        PAGE 2        │       PAGE 3       │     PAGE 4     │
+│   Market Overview   │  Technical Terminal  │    Strategy Lab    │    Strategy    │
+│   & Daily Movers    │  (Deneb Candlestick) │ & Paper Portfolio  │    Screener    │
+└─────────────────────┴──────────────────────┴────────────────────┴────────────────┘
 ```
-
----
-
-## 3. Power BI Executive Dashboard Suite
-
-The Power BI dashboard is organized into four specialized analytical pages designed for institutional research and executive decision-making:
 
 ### Page 1: Market Overview & Daily Movers
-* **Market Pulse KPIs:** Total Daily Market Turnover (NPR), Active Traded Securities Count, Market Advance/Decline Breadth Ratio (`Gainers / Losers`), and Total Market Transactions.
-* **Top 10 Gainers & Losers:** Clustered bar visual isolating single-day percentage leaders and laggards with conditional green/red formatting.
-* **Signal Distribution Donut:** Real-time classification of the entire market universe into active **BUY**, **SELL**, and **HOLD** quantitative recommendations.
-* **Comprehensive Market Grid:** Cross-filterable tabular screener displaying LTP, Volume, Turnover, 14-day RSI, and Candlestick Pattern tags.
+*Designed to give an immediate 30-second pulse of the entire trading day.*
+* **Executive Market KPIs:** Daily Market Turnover (NPR), Active Traded Securities Count, Market Breadth (Advance/Decline Ratio), and Total Completed Transactions.
+* **Top 10 Gainers & Losers:** Clustered horizontal bar charts highlighting single-day percentage momentum with dynamic green/red conditional fills.
+* **Signal Classification Donut:** Instant breakdown of the market universe into active **BUY**, **SELL**, and **HOLD** signals generated by the technical engine.
+* **Market-Wide Cross-Filter Grid:** Searchable table displaying Closing Price (LTP), Turnover, Traded Volume, 14-day Wilder's RSI, and active Candlestick Patterns.
 
-### Page 2: Technical Terminal & Custom Deneb Candlestick Visual
-* **Interactive Deneb Candlestick Terminal:** Built using custom Vega-Lite v5 JSON specification. Features true financial candlesticks (green up-days, red down-days with high/low wicks), an overlayed 20-period Simple Moving Average trendline (`#FB923C`), shaded 20-day $\pm 2.0\sigma$ Bollinger Bands (`#1A73E8`), and discrete quantitative Buy (cyan $\blacktriangle$) / Sell (purple $\blacktriangledown$) trigger markers.
-* **Synchronized Volume Subplot:** Bottom-docked daily volume bars with color-coded directional alignment.
-* **Wilder's 14-Day RSI Sub-chart:** Continuous line chart bounded by dashed Overbought ($70$) and Oversold ($40$) threshold lines.
-* **MACD (12, 26, 9) Momentum Oscillator:** Line and clustered column chart plotting MACD Line, Signal Line, and zero-centered momentum histogram bars.
-* **Slicer Controls:** Single-select security dropdown with live search and an interactive date range timeline slider.
+### Page 2: Technical Terminal (Custom Deneb Candlestick Chart)
+*Standard Power BI native visuals cannot render true financial candlesticks with overlaid technical indicators. I engineered a custom multi-layer financial chart using the **Deneb (Vega-Lite v5)** visual.*
+* **Custom Multi-Layer Candlestick Canvas:**
+  * True OHLC candlesticks (green up-days, red down-days with pixel-perfect wicks).
+  * 20-day Simple Moving Average trendline (`#FB923C`).
+  * Shaded 20-day $\pm 2.0\sigma$ Bollinger Bands channel (`#1A73E8`) to visualize volatility squeezes.
+  * Discrete quantitative signal markers: Blue triangles ($\blacktriangle$) for Buy triggers, Purple triangles ($\blacktriangledown$) for Sell triggers.
+* **Synchronized Volume Subplot:** Daily volume bars aligned directly beneath the price action with up/down color matching.
+* **14-Day Wilder's RSI Oscillator:** Dedicated line chart bounded by dashed Overbought ($70$) and Oversold ($40$) threshold lines.
+* **MACD (12, 26, 9) Momentum Chart:** Combo visual with MACD Line, Signal Line, and zero-centered momentum histogram bars.
+* **Interactive Slicers:** Single-select searchable stock slicer and dynamic date range slider.
 
 ### Page 3: Strategy Lab & Paper Trading Portfolio
-* **Interactive Strategy Backtest Lab:**
-  * Dynamic Strategy Slicer: Toggle between Composite Multi-Factor, MACD Crossover, RSI Mean Reversion, and Candlestick Price Action.
-  * Single-Stock Dynamic Cumulative Equity Curve: Visualizes theoretical portfolio trajectory against total cumulative fees paid.
-  * Trade Audit Log: Detailed execution table showing Entry Date, Exit Date, Holding Duration (Days), Gross Price Return %, Fees Paid, and Net Realized P&L.
-* **Live Paper Trading Portfolio (Dual-Book Accounting):**
-  * Ingests real user BUY executions from `data/paper_trades.csv`.
-  * Computes strict **CDSC Weighted Average Cost of Capital (WACC)** including acquisition broker commissions and SEBON fees.
-  * Computes live mark-to-market **Unrealized P&L (NPR)** and **Unrealized Return %** against the latest verified market Closing Price (LTP).
+*Separates quantitative strategy research from real cash portfolio execution.*
+* **Interactive Single-Stock Strategy Lab:**
+  * Select any strategy and any stock to see the theoretical walk-forward performance.
+  * **Dynamic Cumulative Equity Curve:** DAX measure plotting cumulative net profit over time alongside total fees paid, visually proving where fee drag erodes returns.
+  * **Detailed Trade Audit Log:** Exact entry/exit dates, trade duration (days), gross price return %, fees paid, and realized net P&L.
+* **Live Paper Trading Portfolio Ledger:**
+  * Ingests real user BUY orders from `data/paper_trades.csv`.
+  * Automatically calculates acquisition costs and official **CDSC Weighted Average Cost of Capital (WACC)** including broker and SEBON charges.
+  * Computes live mark-to-market **Unrealized P&L (NPR)** and **Return %** by querying the latest closing price (LTP).
 
-### Page 4: Strategy Screener & Benchmark Matrix
-* **Top 10 Outperformers vs. Underperformers:** Horizontal bar charts ranking the top winning and losing stocks for any selected quantitative strategy.
-* **Strategy Benchmark Comparison Matrix:** Executive cross-comparison table evaluating all 4 strategies head-to-head across **Trade Count**, **Win Rate %**, **Average Price Return %**, **Average Holding Days**, **Cumulative Net P&L (NPR)**, and **Total Regulatory Friction Drag (NPR)**.
-* **Holding Duration vs. Return Scatter:** Visualizes trade return distribution across holding duration, highlighting quick stop-outs vs. extended trend rides.
+### Page 4: Strategy Screener & Benchmark Comparison
+*Enables portfolio managers to evaluate and compare strategies across the entire stock universe.*
+* **Top 10 Outperformers vs. Underperformers:** Ranks the most profitable and least profitable individual stocks for the selected strategy.
+* **Holding Duration vs. Return Distribution:** Scatter visual exploring trade duration (holding days) vs. net return, highlighting rapid cut-losses vs. extended trend winners.
+* **Strategy Benchmark Leaderboard Matrix:** Direct cross-comparison of all 4 strategies evaluated side-by-side on Win Rate %, Average Price Return %, Holding Period, Total Realized P&L, and Total Friction Paid.
 
 ---
 
-## 4. Quantitative Strategy Benchmark Leaderboard
+## 📊 Backtest Findings: What the 2026 Data Revealed
 
-All four strategies were simulated across **60,178 daily price bars** over **402 distinct securities** for the 2026 trading year under strict out-of-sample walk-forward execution (exiting on the immediate subsequent trading day's close upon signal generation):
+I backtested four distinct strategies across **60,178 daily price bars** covering **402 distinct Nepalese securities** for the 2026 trading year. Every trade executed with zero lookahead bias on $T+1$ closing prices and accounted for full broker, regulatory, and tax deductions:
+
+| Strategy | Completed Trades | Win Rate % | Avg Price Return % | Avg Hold Duration | Net Realized P&L (NPR) | Total Friction Drag (NPR) |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Composite Multi-Factor** | 1,512 | **30.22%** | -1.12% | 17.9 Days | -NPR 1,488,128.24 | NPR 623,172.44 |
+| **Candlestick Price Action** | 697 | **31.13%** | -1.62% | 26.5 Days | -NPR 835,675.32 | NPR 272,512.95 |
+| **Wilder's RSI Mean Reversion** | 604 | **29.47%** | -1.24% | **30.5 Days** | **-NPR 620,114.82** | **NPR 237,080.11** |
+| **MACD Trend Crossover** | 914 | **27.02%** | -1.38% | 14.5 Days | -NPR 1,063,234.02 | NPR 392,102.80 |
+
+### Key Takeaways:
+1. **The Compounding Penalty of Over-Trading:** Transaction friction (broker commissions + SEBON + DP charges) ate away between **NPR 237,000 and NPR 623,000** depending on trade frequency. High-turnover strategies suffered disproportionately.
+2. **Mean Reversion Over Trend-Following in Range Regimes:** The NEPSE 2026 market exhibited sideways and corrective action. In this environment, trend-following crossover systems (MACD) produced false breakouts and high whipsaws. The **RSI Mean Reversion** strategy had the lowest overall friction drag and the longest average holding duration (30.5 days).
+3. **Statistical Validity vs. Cash Sizing:** Measuring `price_return_pct` on an unlevered per-trade basis provided clean statistical validity without distorting results through position-sizing bias.
+
+---
+
+## ⚖️ Realistic Nepal Market Friction Modeling
+
+Unlike standard textbook backtests that assume frictionless trading, this system encodes the **official Securities Board of Nepal (SEBON) regulatory gazette (effective May 2024 / Jestha 2081)** down to the exact paisa:
+
+### 1. SEBON Tiered Broker Commissions (Equity Slabs)
+Broker commission rates are tiered by transaction volume:
+* **Up to NPR 50,000:** `0.40%`
+* **NPR 50,001 to NPR 500,000:** `0.37%`
+* **NPR 500,001 to NPR 2,000,000:** `0.34%`
+* **NPR 2,000,001 to NPR 10,000,000:** `0.30%`
+* **Above NPR 10,000,000:** `0.27%`  
+*(Minimum broker fee floor: NPR 10.00 per trade)*
+
+### 2. Clearing & Depository Charges
+* **SEBON Regulatory Fee:** Flat **0.015%** on turnover, applied to both BUY and SELL transactions.
+* **CDSC Depository (DP) Fee:** Flat **NPR 25.00** per security transferred, applied strictly on **SELL** transactions (zero DP fee on BUY).
+
+### 3. Capital Gains Tax (CGT)
+* **Individual CGT:** Flat **7.5%** assessed strictly on positive net profits after all buying and selling costs are deducted:
+$$\text{Taxable Gain} = \text{Sell Value} - \text{Buy Value} - \text{Total Buy Fees} - \text{Total Sell Fees}$$
+*(Zero tax charged on loss-making trades).*
+
+### 4. CDSC Weighted Average Cost of Capital (WACC)
+For live portfolio holdings, position cost basis uses official CDSC WACC standards:
+$$\text{WACC} = \frac{\sum (\text{Purchase Value} + \text{Broker Commission} + \text{SEBON Fee})}{\text{Total Traded Quantity}}$$
+
+---
+
+## 🏗️ Technical Architecture & Pipeline
+
+The project is structured into three decoupled, idempotent Python modules querying a normalized SQLite database:
 
 ```
-=========================================================================================================
-QUANTITATIVE STRATEGY BENCHMARK LEADERBOARD (Pure Price Action & Realistic Friction)
-=========================================================================================================
-                Strategy  Trades  Wins  Losses Win Rate % Avg Price Ret %  Avg Hold Days Net PnL (NPR) Total Friction
-  Composite Multi-Factor    1512   457    1055     30.22%          -1.12%           17.9 -1,488,128.24     623,172.44
-    MACD Trend Crossover     914   247     667     27.02%          -1.38%           14.5 -1,063,234.02     392,102.80
-      RSI Mean Reversion     604   178     426     29.47%          -1.24%           30.5   -620,114.82     237,080.11
-Candlestick Price Action     697   217     480     31.13%          -1.62%           26.5   -835,675.32     272,512.95
-=========================================================================================================
+[ Raw NEPSE Daily CSVs ] ──> [ 01_ingest_to_sql.py ] ──> [ SQLite: nepse.db ]
+                                                              │
+                                                              ├──> fact_daily_ohlcv
+                                                              ├──> dim_company
+                                                              └──> dim_calendar
+                                                              │
+[ 02_signal_engine.py ]  <────────────────────────────────────┘
+        │
+        └──> Computes 7 Vectorized Indicators & Patterns
+        └──> Populates: fact_technical_signals
+        │
+[ 03_simple_backtester.py ] <─────────────────────────────────┘
+        │
+        ├──> Ingests paper_trades.csv ──> fact_paper_holdings (CDSC WACC & LTP)
+        └──> Simulates 4 Strategies  ──> fact_backtest_trades (May 2024 Fees)
+        │
+[ sql/02_views_powerbi.sql ] ──> Compiles Production Analytical Views:
+        ├── vw_market_overview_latest (Page 1)
+        ├── vw_deneb_candlestick (Page 2)
+        ├── vw_backtest_performance (Page 3 & 4)
+        └── vw_paper_portfolio_holdings (Page 3)
+        │
+        ▼
+[ Power BI Desktop (`NEPSE_Analytics.pbix`) ]
 ```
 
-### Quantitative Findings:
-1. **The Friction Drag Phenomenon:** Across all strategies, transaction fees (brokerage + SEBON + DP charges) eroded between **15% to 40% of gross capital**, proving that frequent retail trading in NEPSE is structurally penalized without high-conviction expectancy.
-2. **Mean Reversion vs. Momentum:** RSI Mean Reversion exhibited the lowest total fee drag (NPR 237,080) and longest average holding duration (30.5 days), acting as a superior risk-adjusted swing framework compared to fast-switching trend crossover systems in range-bound market regimes.
-3. **Price Return Statistical Separation:** Isolating `price_return_pct` from cash-sized P&L guarantees that statistical validity is evaluated independently of arbitrary position sizing.
+### Relational Schema Design:
+* **`dim_company`:** Master list of 476 verified ticker symbols and full registered corporate names.
+* **`dim_calendar`:** Dedicated date dimension enabling time-intelligence calculations in DAX.
+* **`fact_daily_ohlcv`:** 60,178 clean historical bars with primary key constraint `(trade_date, symbol)`.
+* **`fact_technical_signals`:** Pre-computed SMA, Bollinger Bands, MACD, Wilder's RSI, and Candlestick flags.
+* **`fact_backtest_trades`:** 3,727 individual walk-forward trades with gross return, fee breakdowns, and net P&L.
+* **`fact_paper_holdings`:** Active portfolio positions with live mark-to-market valuations against latest LTP.
 
 ---
 
-## 5. Real-World Market Friction & Nepal Regulatory Modeling
+## 🚀 How to Run & Replicate
 
-Unlike generic trading tutorials that assume zero slippage and zero commissions, this pipeline precisely encodes the **official Securities Board of Nepal (SEBON) regulatory gazette (effective May 2024 / Jestha 2081)**:
+The repository is self-contained. Anyone can clone and run the full pipeline in under 30 seconds:
 
-### 1. Tiered Broker Commission Slabs (Equity Tranche)
-$$
-\text{Broker Fee} = 
-\begin{cases} 
-0.40\% & \text{for Trade Amount} \le \text{NPR } 50,000 \\
-0.37\% & \text{for NPR } 50,001 \text{ to } 500,000 \\
-0.34\% & \text{for NPR } 500,001 \text{ to } 2,000,000 \\
-0.30\% & \text{for NPR } 2,000,001 \text{ to } 10,000,000 \\
-0.27\% & \text{for Trade Amount} > \text{NPR } 10,000,000 
-\end{cases}
-$$
-*(Minimum broker commission floor: NPR 10.00 per transaction)*
-
-### 2. Regulatory & Clearing Charges
-* **SEBON Regulatory Fee:** Flat **0.015%** ($0.00015$) levied on total turnover on both BUY and SELL transactions.
-* **CDSC Depository (DP) Fee:** Flat **NPR 25.00** per security transfer, applied strictly on **SELL** transactions (zero DP charge on BUY).
-
-### 3. Capital Gains Taxation (CGT)
-* **Individual CGT:** Flat **7.5%** on realized net capital gains ($\text{Gross Profit} - \text{Total Buy Fees} - \text{Total Sell Fees}$). Zero tax assessed on unprofitable trades.
-
-### 4. CDSC Weighted Average Cost of Capital (WACC) Formula
-For paper portfolio accounting, open positions calculate true acquisition cost using official CDSC WACC standards:
-$$
-\text{WACC} = \frac{\sum (\text{Purchase Value} + \text{Broker Commission} + \text{SEBON Fee})}{\text{Total Traded Quantity}}
-$$
-
----
-
-## 6. Reproduction & Execution Guide
-
-The entire pipeline is self-contained, reproducible, and requires only standard Python libraries:
-
-### Step 1: Clone the Repository
+### 1. Clone & Set Up Environment
 ```bash
 git clone https://github.com/kab-s/nepse-analytics-powerbi.git
 cd nepse-analytics-powerbi
-```
 
-### Step 2: Set Up Virtual Environment & Dependencies
-```bash
-# Create virtual environment
+# Create and activate virtual environment
 python -m venv venv
 
-# Activate virtual environment
-# Windows PowerShell:
+# Windows:
 .\venv\Scripts\Activate.ps1
-# Linux / macOS:
+# Mac / Linux:
 source venv/bin/activate
 
-# Install requirements
+# Install dependencies (pandas, numpy, python-dateutil)
 pip install -r requirements.txt
 ```
 
-### Step 3: Execute the Data & Quant Pipeline
-Run the three idempotent modules sequentially:
-
+### 2. Execute the Data Pipeline
 ```bash
-# 1. Ingest daily CSVs, normalize OHLCV facts, and compile SQL views
+# Step 1: Ingest CSVs, repair formatting, and compile SQL views
 python src/01_ingest_to_sql.py
 
-# 2. Compute technical indicators, RSI, MACD, and candlestick patterns
+# Step 2: Compute technical indicators and candlestick geometries
 python src/02_signal_engine.py
 
-# 3. Ingest paper trades, calculate CDSC WACC, and execute walk-forward backtests
+# Step 3: Sync paper portfolio and execute strategy backtests
 python src/03_simple_backtester.py
 ```
-*Total pipeline execution time: ~25 seconds on standard hardware.*
+*Total execution time: ~25 seconds on standard hardware.*
 
-### Step 4: Open and Explore in Power BI Desktop
-1. Open [`NEPSE_Analytics.pbix`](NEPSE_Analytics.pbix) in **Power BI Desktop**.
-2. Click **Home $\rightarrow$ Refresh** to synchronize the report with the freshly compiled SQLite database (`nepse.db`).
-3. Alternatively, review the pre-rendered showcase presentation in [`NEPSE_Analytics.pdf`](NEPSE_Analytics.pdf).
+### 3. Open the Power BI Dashboard
+* Open [`NEPSE_Analytics.pbix`](NEPSE_Analytics.pbix) in **Power BI Desktop**.
+* Click **Home $\rightarrow$ Refresh** to pull the latest SQLite facts.
+* If you do not have Power BI Desktop installed, explore the high-resolution exported presentation in [`NEPSE_Analytics.pdf`](NEPSE_Analytics.pdf).
 
 ---
 
-## 7. Repository Structure
+## 📁 Repository Structure
 
 ```
 .
-├── README.md                              <- Production repository overview & technical documentation
-├── requirements.txt                       <- Pinned Python dependencies (pandas, numpy, python-dateutil)
-├── .gitignore                             <- Git exclusion rules (virtual environments, local caches)
-├── nepse.db                               <- Pre-compiled production SQLite 3 relational database
-├── NEPSE_Analytics.pbix                   <- Power BI Desktop multi-page report with DAX & Deneb
-├── NEPSE_Analytics.pdf                    <- High-resolution 4-page executive presentation deck
+├── README.md                              <- Project documentation and quantitative overview
+├── requirements.txt                       <- Pinned Python dependencies
+├── .gitignore                             <- Excludes virtual environment and local artifacts
+├── nepse.db                               <- Pre-compiled SQLite 3 database (ready to query)
+├── NEPSE_Analytics.pbix                   <- Power BI Desktop 4-page dashboard
+├── NEPSE_Analytics.pdf                    <- High-resolution 4-page PDF presentation deck
 │
-├── data/                                  <- Market data input directory
+├── data/                                  <- Market data feeds
 │   ├── 2026.csv                           <- Official 2026 NEPSE historical daily OHLCV dataset
-│   ├── paper_trades.csv                   <- CSV ledger for user paper portfolio BUY executions
-│   └── Today's Price - 2026-*.csv         <- Daily transaction delta price feeds
+│   ├── paper_trades.csv                   <- User paper portfolio BUY ledger
+│   └── Today's Price - 2026-*.csv         <- Daily price updates
 │
-├── powerbi/                               <- Custom visual templates & theme definitions
+├── powerbi/                               <- Custom visual specifications
 │   └── deneb_candlestick_spec.json        <- Production Vega-Lite v5 specification for Deneb
 │
-├── sql/                                   <- Relational database scripts
-│   ├── 01_schema_ddl.sql                  <- DDL schema creating dimension, fact tables, and indexes
-│   └── 02_views_powerbi.sql               <- Production analytical views feeding Power BI
+├── sql/                                   <- Relational database code
+│   ├── 01_schema_ddl.sql                  <- DDL creating dimensions, facts, and indexes
+│   └── 02_views_powerbi.sql               <- Analytical SQL views feeding Power BI
 │
-└── src/                                   <- Modular Python ETL & quantitative engine
-    ├── 01_ingest_to_sql.py                <- Module 01: Ingestion, cleaning, and SQL view synchronization
-    ├── 02_signal_engine.py                <- Module 02: Vectorized indicators & candlestick patterns
-    └── 03_simple_backtester.py            <- Module 03: Multi-strategy backtester & CDSC WACC ledger
+└── src/                                   <- Python ETL and quant engine
+    ├── 01_ingest_to_sql.py                <- Ingestion, data repair, and view compilation
+    ├── 02_signal_engine.py                <- Vectorized indicators and candlestick detection
+    └── 03_simple_backtester.py            <- Multi-strategy backtester and CDSC WACC ledger
 ```
 
 ---
 
-## 8. Analytical Boundaries & Risk Disclosures
-
-To maintain professional and quantitative integrity:
-* **Historical Simulation Boundary:** Past backtested performance is strictly educational and does not guarantee future financial returns. Market liquidity, execution slippage, circuit breakers, and order book depth may affect live trading executions.
-* **No Financial Advice:** This project serves as an analytical engineering framework and decision-support tool. It does not constitute investment advice or brokerage recommendations.
-* **Idempotent Data Integrity:** All database operations use `IF NOT EXISTS`, `ON CONFLICT DO UPDATE`, and atomic transactions to prevent duplicate records or orphaned foreign keys.
-
----
-
-## 👨‍💻 Author & Connect
+## 👨‍💻 About the Author
 
 **Kabindra Shrestha**  
 *Data Analyst | Data Scientist | Applied AI/ML Engineer | BI & MIS Specialist*  
 **MBA • BBIS • MCA (Candidate)**  
 Lalitpur, Nepal
+
+With an extensive background across banking MIS operations, treasury reporting, applied machine learning, and business intelligence, I specialize in transforming messy enterprise data systems into robust, reliable, and actionable decision-support tools.
 
 * 💼 **LinkedIn:** [kabindra-shrestha](https://www.linkedin.com/in/kabindra-shrestha-b34542170/)
 * 🌐 **Flagship Project:** [FlyRank: Enterprise Page Priority Pipeline](https://github.com/kab-s/flyrank-page-priority-pipeline)
