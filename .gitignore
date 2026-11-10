@@ -6,8 +6,7 @@ ENV/
 
 # Local workspace & internal documentation
 local-only/
-.gemini/
-scratch/
+
 
 # Python bytecode & cache
 __pycache__/
