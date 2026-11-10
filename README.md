@@ -106,7 +106,7 @@ Evaluating trade strategies across **3,727 completed walk-forward trades** in th
 
 ---
 
-## 💼 Active Paper Portfolio Ledger & CDSC WACC
+## 💼 Active Paper Portfolio
 
 ### Simple CSV Ingestion (`data/paper_trades.csv`)
 Adding a purchase requires only 3 fields:
