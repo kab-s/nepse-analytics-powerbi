@@ -70,28 +70,28 @@ The dashboard is structured into four focused analytical pages in **Power BI Des
 * **Cross-Strategy Comparison Matrix:** Side-by-side comparison of all 4 quantitative strategies across Total Trades, Winning Trades, Losing Trades, Win Rate %, and Average Price Return % per trade.
 * **Stock Win Rate % vs. Trade Frequency Scatter:** Bubble visual plotting trade frequency (X-axis) against win rate (Y-axis), with bubble size reflecting total wins, referenced against a 50% Win Rate dashed line.
 
-### Data Model (Star Schema)
-The Power BI semantic model connects directly to the SQLite relational schema structured for clean time-intelligence and analytical reporting:
-
-```
-                  ┌─────────────────────────────────┐
-                  │          dim_calendar           │
-                  │ (trade_date, year, month, day)  │
-                  └────────────────┬────────────────┘
-                                   │ 1:N
- ┌───────────────────────┐  1:N    ▼     1:N ┌────────────────────────┐
- │      dim_company      ├────► [ OHLCV ] ◄──┤ fact_technical_signals │
- │ (symbol, company_name)│      [ Facts ]    │ (SMA, RSI, MACD, BB)   │
- └───────────┬───────────┘      └───────┬─┘  └────────────────────────┘
-             │ 1:N                      │
-             ▼                          ▼ (LTP & Close Price Lookup)
- ┌───────────────────────┐   ┌──────────────────────────┐
- │  fact_paper_holdings  │   │   fact_backtest_trades   │
- │ (WACC, Cost, Val)     │   │ (4 Strategies, Return %) │
- └───────────────────────┘   └──────────────────────────┘
-```
-
 ---
+
+### Data Model (Star Schema)
+The Power BI semantic model connects directly to the SQLite relational schema structured for analytical reporting:
+
+```text
+                        ┌─────────────────────────────────┐
+                        │          dim_calendar           │
+                        │ (trade_date, year, month, day)  │
+                        └────────────────┬────────────────┘
+                                         │ 1:N
+┌───────────────────────┐   1:N          ▼          1:N   ┌────────────────────────┐
+│      dim_company      ├─────► ┌─────────────────┐ ◄─────┤ fact_technical_signals │
+│ (symbol, company_name)│       │  OHLCV Facts    │       │ (SMA, RSI, MACD, BB)   │
+└───────────┬───────────┘       │fact_daily_ohlcv │       └────────────────────────┘
+            │ 1:N               └────────┬────────┘
+            ▼                            ▼ (LTP & Close Price Lookup)
+┌───────────────────────┐       ┌──────────────────────────┐
+│  fact_paper_holdings  │       │   fact_backtest_trades   │
+│     (Cost, Val)       │       │ (4 Strategies, Return %) │
+└───────────────────────┘       └──────────────────────────┘
+```
 
 ## 📊 Quantitative Strategy Benchmark Matrix
 
@@ -103,12 +103,6 @@ Evaluating trade strategies across **3,727 completed walk-forward trades** in th
 | **Candlestick Price Action** | 697 | 217 | 480 | **31.13%** | 
 | **Wilder's RSI Mean Reversion** | 604 | 178 | 426 | **29.47%** | 
 | **MACD Trend Crossover** | 914 | 247 | 667 | **27.02%** |
-
-### Strategy Logic Overview
-* **Composite Multi-Factor:** Multi-indicator confluence requiring Trend (`Close > SMA 50`), Momentum (`MACD Histogram > 0`), and Value confirmation (`RSI < 40`).
-* **Candlestick Price Action:** Enters on high-conviction bullish reversal geometries (`Bullish Engulfing`, `Bullish Hammer`) and exits on bearish patterns (`Bearish Engulfing`, `Shooting Star`).
-* **Wilder's RSI Mean Reversion:** Buys oversold pullbacks (`RSI < 40`) trading above the 20-day trend (`Close > SMA 20`); exits on overbought signals (`RSI > 72`).
-* **MACD Trend Crossover:** Captures directional momentum when the MACD histogram crosses above zero with price trading above the 50-day moving average (`Close > SMA 50`).
 
 ---
 
@@ -154,22 +148,22 @@ The **Extract, Transform, Load (ETL)** pipeline turns NEPSE CSV exports into opt
 
 ---
 
-## 🐍 Python Engineering & Execution Architecture
+## 🐍 Python Scripts
 
-Rather than relying on heavyweight or fragile third-party frameworks, the quant engine is engineered strictly using **Python standard libraries, NumPy, and Pandas** for high execution speed, resilience, and maintainability:
+**Python standard libraries, NumPy, and Pandas** are used for high execution speed, resilience, and maintainability:
 
 * **Vectorized Financial Analytics:** Uses NumPy arrays and Pandas rolling windows/exponential smoothing (`.rolling()`, `.ewm()`) to compute 7 technical indicators and candlestick geometries across 60,000+ price bars in ~10 seconds—avoiding slow Python `for` loops.
 * **Defensive Ingestion & Text Repair:** Implements a custom line-by-line fallback parser in `01_ingest_to_sql.py` that reconstructs records where company names contain unquoted commas (a frequent defect in raw NEPSE CSV exports).
-* **Leakage-Free Walk-Forward Simulator:** Enforces strict $T+1$ execution in `03_simple_backtester.py` by shifting signal arrays forward by one bar, guaranteeing zero lookahead bias during trade entry and exit.
+* **Leakage-Free Walk-Forward Simulator:** Enforces strict `T+1` execution in `03_simple_backtester.py` by shifting signal arrays forward by one bar, guaranteeing zero lookahead bias during trade entry and exit.
 * **Zero Dependency Bloat:** Requires only `pandas`, `numpy`, and `python-dateutil`. The database layer relies entirely on Python's built-in `sqlite3` driver, making setup fast and lightweight across all operating systems.
 
 ### Modular Script Breakdown
 
-| Module | Runtime | Core Responsibilities | Key Python Techniques |
-|---|:---:|---|---|
-| **`01_ingest_to_sql.py`** | ~8s | CSV scanning, schema mapping, calendar generation, automated DDL | Regex stream parsing, `sqlite3.executescript()`, atomic transactions |
-| **`02_signal_engine.py`** | ~10s | Rolling SMA/Bollinger Bands, Wilder's RSI, MACD, Candlestick logic | Vectorized `.rolling()` & `.ewm()`, `np.select()` boolean mask conditions |
-| **`03_simple_backtester.py`** | ~8s | Walk-forward multi-strategy backtesting, CDSC WACC portfolio ledger | Forward-shift execution ($T+1$), group aggregations, MTM valuation |
+| Module | Runtime | Core Responsibilities | 
+|---|:---:|---|
+| **`01_ingest_to_sql.py`** | ~8s | CSV scanning, schema mapping, calendar generation, automated DDL | 
+| **`02_signal_engine.py`** | ~10s | Rolling SMA/Bollinger Bands, Wilder's RSI, MACD, Candlestick logic |
+| **`03_simple_backtester.py`** | ~8s | Walk-forward multi-strategy backtesting, Portfolio ledger | 
 
 ---
 
